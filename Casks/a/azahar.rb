@@ -1,9 +1,9 @@
 cask "azahar" do
   arch arm: "arm64", intel: "x86_64"
 
-  version "2125.1.3"
-  sha256 arm:   "bec0e28a4592b073ec285510935c24353bdae28bb443961d441ab768d66ffdac",
-         intel: "9874f90982ea17cb12379c303fd63dd7cd169f64e3fdf8fb3852bae1b27d1f75"
+  version "2126.0"
+  sha256 arm:   "3483afef5a0e6579abe7c9f0954f306a6665f5291bfde09ee2402a6ca53b5267",
+         intel: "26029710a9187349c4832fb35d423ed01989776969f4fcf20a22413d2b794a70"
 
   url "https://github.com/azahar-emu/azahar/releases/download/#{version}/azahar-macos-#{arch}-#{version}.zip"
   name "Azahar"
@@ -15,7 +15,7 @@ cask "azahar" do
     strategy :github_latest
   end
 
-  depends_on :macos
+  depends_on macos: :ventura
 
   app "azahar-macos-#{arch}-#{version}/Azahar.app", target: "Azahar.app"
 

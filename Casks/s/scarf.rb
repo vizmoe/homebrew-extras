@@ -1,9 +1,9 @@
 cask "scarf" do
   arch arm: "ARM64", intel: "Universal"
 
-  version "2.17.0"
-  sha256 arm:   "6f01f80a07f1febdd5161a98c56d2b6f23f4cc5f27befaa6dbb0e5c578ebb57a",
-         intel: "c327606c2dfc14657a2b61b90db65fede1dedd51245bd72ec73be012a507e74e"
+  version "2.20.0"
+  sha256 arm:   "ef9c785c84c4f8c2ac4a642b8844883288cbe41669bb4b39c7b986109ad7ab2b",
+         intel: "cc83956437e6c3398c5f6fa43307f79181d58f098eec9a4d3a563ecc131dba0a"
 
   url "https://github.com/awizemann/scarf/releases/download/v#{version}/Scarf-v#{version}-#{arch}.zip"
   name "Scarf"
@@ -16,7 +16,7 @@ cask "scarf" do
   end
 
   auto_updates true
-  depends_on macos: :sonoma
+  depends_on macos: :sequoia
 
   app "scarf.app", target: "Scarf.app"
 
