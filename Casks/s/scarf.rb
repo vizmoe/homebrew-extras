@@ -11,8 +11,8 @@ cask "scarf" do
   homepage "https://github.com/awizemann/scarf"
 
   livecheck do
-    url :url
-    strategy :github_latest
+    url "https://awizemann.github.io/scarf/appcast.xml"
+    strategy :sparkle, &:short_version
   end
 
   auto_updates true

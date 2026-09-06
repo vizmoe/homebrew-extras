@@ -8,10 +8,11 @@ cask "clicknow" do
   homepage "https://clicknow.ai/"
 
   livecheck do
-    url :url
-    strategy :github_latest
+    url "https://laike9m.github.io/Clicknow/appcast.xml"
+    strategy :sparkle, &:short_version
   end
 
+  auto_updates true
   depends_on macos: :sonoma
 
   app "Clicknow.app"
