@@ -1,9 +1,9 @@
 cask "clouddrive2" do
   arch arm: "arm64", intel: "x64"
 
-  version "1.0.16,12"
-  sha256 arm:   "d5a56b30003553d955a01f310573001aa3643f260346fabbec3ac12a0a9fda45",
-         intel: "7a5ba39e8744cd95abd289bea77785bc8df9466600df65c2c1e3623c4ad7633f"
+  version "1.0.17,14"
+  sha256 arm:   "dd01ab6b3b19b8f939b42a3044dba33b9e11f74e8bd580cc529f77e26c621b08",
+         intel: "b93f8fadb6dfc023710ad9013b948067e1c16d7500b175b5c24135111f71b3aa"
 
   url "https://github.com/cloud-fs/cloud-fs.github.io/releases/download/app-v#{version.csv.first}-#{version.csv.second}/CloudDrive2-#{version.csv.first}-#{version.csv.second}-macos-#{arch}.dmg"
   name "CloudDrive2"

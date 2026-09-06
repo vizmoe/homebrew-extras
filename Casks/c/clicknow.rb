@@ -1,9 +1,8 @@
 cask "clicknow" do
-  version "1.20"
-  sha256 "3aeee4c20a6cd83e7a32cd9f01e0c5c072c51ef04a0dc60b9d31603a31efaa89"
+  version "1.20.1"
+  sha256 "5852bbd79a5486bc66d29ef59742c59e11c01c005396d00156c5f8783cf88844"
 
-  url "https://github.com/laike9m/Clicknow/releases/download/#{version}/Clicknow-#{version}.dmg",
-      verified: "github.com/laike9m/Clicknow/"
+  url "https://github.com/laike9m/Clicknow/releases/download/#{version}/Clicknow-#{version}.dmg"
   name "Clicknow"
   desc "AI translation and explanation with one click"
   homepage "https://clicknow.ai/"
