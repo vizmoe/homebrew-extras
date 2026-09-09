@@ -19,7 +19,8 @@ defaults:
 
 jobs:
   autobump:
-    runs-on: ubuntu-latest
+    # Cask bumps must run on macOS: Linux looks for Linux artifacts/checksums.
+    runs-on: macos-26
     permissions:
       contents: write
       pull-requests: write
