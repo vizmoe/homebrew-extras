@@ -2,7 +2,7 @@
 
 ![Homebrew](https://img.shields.io/badge/-Homebrew-FBB040?labelColor=555555&logoColor=FFFFFF&logo=homebrew) ![CI](https://github.com/vizmoe/homebrew-extras/actions/workflows/tests.yml/badge.svg) ![code-size](https://img.shields.io/github/languages/code-size/vizmoe/homebrew-extras) ![repo-size](https://img.shields.io/github/repo-size/vizmoe/homebrew-extras)
 
-Extras [Homebrew](https://github.com/Homebrew/brew) 🍺 Casks Not Included in the Official [Homebrew-Cask](https://github.com/Homebrew/homebrew-cask) Tap
+Extras [Homebrew](https://github.com/Homebrew/brew) 🍺 Formulae and Casks Not Included in the Official [Homebrew-Core](https://github.com/Homebrew/homebrew-core) and [Homebrew-Cask](https://github.com/Homebrew/homebrew-cask) Taps
 
 ## 🍺 Get Started
 
@@ -10,7 +10,21 @@ Extras [Homebrew](https://github.com/Homebrew/brew) 🍺 Casks Not Included in t
 brew tap vizmoe/extras
 ```
 
+Install go-grip:
+
+```bash
+brew install vizmoe/extras/go-grip
+```
+
 ## 🌍 List
+
+### Formulae
+
+| Formula Name | Site | Note |
+| :----------: | :--: | :--- |
+| `go-grip` | [go-grip](https://github.com/chrishrb/go-grip) | Preview Markdown files locally with GitHub styling |
+
+### Casks
 
 |      Cask Name      |                                 Site                                  |                         Note                          |
 | :-----------------: | :-------------------------------------------------------------------: | :---------------------------------------------------: |
