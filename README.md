@@ -16,6 +16,10 @@ Install go-grip:
 brew install vizmoe/extras/go-grip
 ```
 
+The formula installs upstream prebuilt binaries for macOS and Linux on arm64 and x86_64; no Go toolchain is required. The Linux x86_64 binary requires glibc 2.34 or newer.
+
+The daily autobump workflow updates casks only. go-grip release updates require updating all four platform checksums manually; check for new releases with `brew livecheck vizmoe/extras/go-grip`.
+
 ## 🌍 List
 
 ### Formulae
