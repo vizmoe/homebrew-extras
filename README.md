@@ -20,6 +20,14 @@ The formula installs upstream prebuilt binaries for macOS and Linux on arm64 and
 
 The daily autobump workflow updates casks only. go-grip release updates require updating all four platform checksums manually; check for new releases with `brew livecheck vizmoe/extras/go-grip`.
 
+Install the Magpie macOS app:
+
+```bash
+brew install --cask vizmoe/extras/magpie
+```
+
+The cask installs the signed upstream desktop app for Apple Silicon and Intel Macs running macOS 12 Monterey or later.
+
 ## 🌍 List
 
 ### Formulae
@@ -37,6 +45,7 @@ The daily autobump workflow updates casks only. go-grip release updates require 
 |      `baocut`       |                    [BaoCut](https://baocut.app/)                     |      Local-first transcription and subtitle editor      |
 |     `clicknow`      |                   [Clicknow](https://clicknow.ai/)                   |        AI translation and explanation with one click        |
 |    `clouddrive2`    |             [CloudDrive2](https://www.clouddrive2.com/)              |              Unified cloud storage manager              |
+|      `magpie`      |                   [Magpie](https://usemagpie.ai/)                   |          Menu bar model manager for AI coding agents          |
 |   `nowledge-mem`    |              [Nowledge Mem](https://mem.nowledge.co/)               |     Local-first context manager for AI conversations     |
 |       `scarf`       |           [Scarf](https://github.com/awizemann/scarf)            |         Native companion app for the Hermes AI agent         |
 |    `subrenamer`     |         [SubRenamer](https://github.com/qwqcode/SubRenamer)          |      Batch rename subtitle files to match video names      |
