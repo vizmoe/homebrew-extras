@@ -1,9 +1,9 @@
 cask "azahar" do
   arch arm: "arm64", intel: "x86_64"
 
-  version "2126.1"
-  sha256 arm:   "d0e261f53a61ea005ef62e30db4a3ead935d8f1a0ec1d1809d03c05949dc0914",
-         intel: "e47f5dc5457da4951d70328e189564695a4e9cd3e15f75f8e70e78b5939ac5cb"
+  version "2126.1.1"
+  sha256 arm:   "473214a0d4493839b411c1754f5aa51e83a2b3f9c215225f855b6346914bc485",
+         intel: "bc01eb4bc20f3671bdddfe3905000f719841add093a99aef98249e6e66822abb"
 
   url "https://github.com/azahar-emu/azahar/releases/download/#{version}/azahar-macos-#{arch}-#{version}.zip"
   name "Azahar"
