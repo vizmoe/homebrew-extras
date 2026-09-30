@@ -1,6 +1,6 @@
 cask "clicknow" do
-  version "1.20.1"
-  sha256 "5852bbd79a5486bc66d29ef59742c59e11c01c005396d00156c5f8783cf88844"
+  version "1.21"
+  sha256 "f63b3c87131468aab41dddf9507fe257413bfb5c8590547da7c9f219e42c5143"
 
   url "https://github.com/laike9m/Clicknow/releases/download/#{version}/Clicknow-#{version}.dmg"
   name "Clicknow"
