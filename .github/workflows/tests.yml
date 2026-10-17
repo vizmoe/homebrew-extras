@@ -56,12 +56,20 @@ jobs:
 
       - run: brew test-bot --only-tap-syntax
 
-      - name: Test livecheck failure reporting
-        if: runner.os == 'macOS'
-        run: python3 -m unittest discover -s test -p '*_test.py' -v
+      - name: Install and verify delivery dependencies
+        run: |
+          if ! command -v python3 >/dev/null; then brew install python; fi
+          if ! command -v gh >/dev/null; then brew install gh; fi
+          python3 --version
+          gh --version
+
+      - name: Test update automation
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: python3 -m unittest discover -s ./test -p '*_test.py' -v
 
       - name: Test cask livecheck
         if: runner.os == 'macOS'
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
         run: |
           brew install-bundler-gems --add-groups=formula_test,livecheck
           for test_file in test/*_livecheck_test.rb; do
@@ -70,6 +78,7 @@ jobs:
 
       - name: Verify cask release and all architecture downloads
         if: runner.os == 'macOS' && github.event_name == 'workflow_dispatch'
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAP_NAME: ${{ steps.set-up-homebrew.outputs.tap-name }}
@@ -82,6 +91,7 @@ jobs:
 
       - name: Test formulae in dispatched PR
         if: github.event_name == 'workflow_dispatch'
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           UPDATE_PR: ${{ inputs.pull_request }}
