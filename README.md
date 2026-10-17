@@ -42,7 +42,7 @@ The cask installs the signed upstream desktop app for Apple Silicon and Intel Ma
 | :-----------------: | :-------------------------------------------------------------------: | :---------------------------------------------------: |
 | `audirvana-origin`  |                 [Audirvana Origin](https://audirvana.com/)                 |                 Audio playback software                 |
 |      `azahar`       |          [Azahar](https://github.com/azahar-emu/azahar)           |                 Nintendo 3DS emulator                 |
-|      `baocut`       |                    [BaoCut](https://baocut.app/)                     |      Local-first transcription and subtitle editor      |
+|      `baocut`       |                    [BaoCut](https://baocut.com/)                     |      Local-first transcription and subtitle editor      |
 |     `clicknow`      |                   [Clicknow](https://clicknow.ai/)                   |        AI translation and explanation with one click        |
 |    `clouddrive2`    |             [CloudDrive2](https://www.clouddrive2.com/)              |              Unified cloud storage manager              |
 |      `magpie`      |                   [Magpie](https://usemagpie.ai/)                   |          Menu bar model manager for AI coding agents          |
