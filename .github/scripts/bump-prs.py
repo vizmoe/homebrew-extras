@@ -219,6 +219,53 @@ def live_versions(tap):
             and isinstance(e["version"].get("latest"), str) and e["version"]["latest"].strip()}
 
 
+def merge_pending(api, attempts=120):
+    pending = {}
+    failures = []
+
+    def failed(message):
+        notice(message, True)
+        failures.append(message)
+
+    for pr in api.pulls():
+        if not candidate(api, pr):
+            continue
+        try:
+            inspect_pr(api, pr)
+            pending[pr["number"]] = pr["head"]["sha"]
+        except (ValueError, subprocess.CalledProcessError) as error:
+            failed(f'PR #{pr["number"]}: {error}')
+
+    for attempt in range(attempts):
+        for number, sha in list(pending.items()):
+            try:
+                pr = api.pull(number)
+                if pr["state"] != "open":
+                    del pending[number]
+                    continue
+                if pr["head"]["sha"] != sha:
+                    raise ValueError("PR head changed while waiting; updater must restart verification")
+                runs = [r for r in api.runs(sha) if r["event"] == "workflow_dispatch"]
+                if not runs or runs[0]["status"] != "completed":
+                    continue
+                if runs[0]["conclusion"] != "success":
+                    raise ValueError(f'CI failed: {runs[0]["html_url"]}')
+                if merge_run(api, runs[0]["id"]):
+                    del pending[number]
+            except (ValueError, subprocess.CalledProcessError) as error:
+                failed(f"PR #{number}: {error}")
+                del pending[number]
+        if not pending:
+            break
+        if attempt < attempts - 1:
+            time.sleep(15)
+
+    for number, sha in pending.items():
+        failed(f"PR #{number}: Timed out waiting for CI/merge gates at {sha}; rerun the updater")
+    if failures:
+        raise ValueError("; ".join(failures))
+
+
 def ensure_issue(api, name, version, pr=None):
     body = (pr.get("body") or "") if pr else ""
     closing = re.findall(r"(?im)^Closes #(\d+)\s*$", body)
@@ -290,9 +337,11 @@ def refresh(api, pr, name, latest, tap):
 def reconcile(api, tap):
     versions = live_versions(tap)
     failures = []
+    pending_updates = False
     for listed in api.pulls():
         if not candidate(api, listed):
             continue
+        pending_updates = True
         try:
             pr = api.pull(listed["number"])
             name = inspect_pr(api, pr)
@@ -309,6 +358,10 @@ def reconcile(api, tap):
             message = f'PR #{listed["number"]}: {error}'
             notice(message, True)
             failures.append(message)
+    # Token-triggered runs may not emit workflow_run. Explicit dispatch does.
+    if pending_updates:
+        api.dispatch("automerge.yml", api.default_branch, {})
+        notice("Started the default-branch merge worker to wait for current-head CI.")
     if failures:
         raise ValueError(f"{len(failures)} cask delivery failure(s)")
 
@@ -337,7 +390,7 @@ def formulae(api, number, sha):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=["prepare", "reconcile", "merge", "verify", "formulae"])
+    parser.add_argument("operation", choices=["prepare", "reconcile", "merge", "merge-pending", "verify", "formulae"])
     parser.add_argument("--tap", default=os.environ.get("TAP_NAME"))
     parser.add_argument("--pr", type=int)
     parser.add_argument("--sha")
@@ -346,6 +399,8 @@ def main():
     api = GitHub(os.environ["GITHUB_REPOSITORY"])
     if args.operation == "merge":
         merge_run(api, args.run_id)
+    elif args.operation == "merge-pending":
+        merge_pending(api)
     elif args.operation == "verify":
         verify(api, args.pr, args.sha, args.tap)
     elif args.operation == "formulae":
