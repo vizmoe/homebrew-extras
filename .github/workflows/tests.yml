@@ -68,11 +68,13 @@ jobs:
       - name: Test update automation
         run: python3 -m unittest discover -s test -p '*_test.py' -v
 
-      - name: Test BaoCut livecheck
+      - name: Test cask livecheck
         if: runner.os == 'macOS'
         run: |
           brew install-bundler-gems --add-groups=formula_test,livecheck
-          brew ruby test/baocut_livecheck_test.rb
+          for test_file in test/*_livecheck_test.rb; do
+            brew ruby "$test_file"
+          done
 
       - name: Verify cask release and all architecture downloads
         if: runner.os == 'macOS' && github.event_name == 'workflow_dispatch'
