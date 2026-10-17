@@ -40,6 +40,13 @@ jobs:
       - run: brew test-bot --only-setup
 
       - run: brew test-bot --only-tap-syntax
+
+      - name: Test BaoCut livecheck
+        if: runner.os == 'macOS'
+        run: |
+          brew install-bundler-gems --add-groups=formula_test,livecheck
+          brew ruby test/baocut_livecheck_test.rb
+
       - run: brew test-bot --only-formulae
         if: github.event_name == 'pull_request'
 
