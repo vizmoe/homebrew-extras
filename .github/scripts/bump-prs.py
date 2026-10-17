@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 from urllib.parse import urlencode
 
 
@@ -270,7 +271,16 @@ def refresh(api, pr, name, latest, tap):
         if head != pr["head"]["sha"]:
             command("git", "push", "origin", f"HEAD:refs/heads/{branch}", capture=False)
         api.request(f'/pulls/{pr["number"]}', "PATCH", {"title": f"{name} {latest}"})
-        return api.pull(pr["number"])
+        # GitHub can briefly return the old PR head after accepting the push.
+        for attempt in range(10):
+            updated = api.pull(pr["number"])
+            if updated["head"]["sha"] == head:
+                return updated
+            if updated["head"]["sha"] != pr["head"]["sha"]:
+                raise ValueError("PR changed after refresh; refusing to dispatch CI")
+            if attempt < 9:
+                time.sleep(3)
+        raise ValueError(f"Pushed PR head {head} is not visible; rerun the updater")
     finally:
         # Only a dedicated Actions checkout may run refresh. Do not reset user work.
         command("git", "reset", "--hard", start)
