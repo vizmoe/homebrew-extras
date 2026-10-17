@@ -5,9 +5,18 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Automated cask PR to validate
+        required: true
+      head_sha:
+        description: Expected PR head SHA
+        required: true
 
 jobs:
   test-bot:
+    timeout-minutes: 30
     strategy:
       matrix:
         os: [ macos-26 ]
@@ -22,6 +31,12 @@ jobs:
       contents: read
       pull-requests: read
     steps:
+      - name: Verify dispatched revision
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          EXPECTED_SHA: ${{ inputs.head_sha }}
+        run: test "$GITHUB_SHA" = "$EXPECTED_SHA"
+
       - name: Set up Homebrew
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@main
@@ -51,11 +66,20 @@ jobs:
           brew install-bundler-gems --add-groups=formula_test,livecheck
           brew ruby test/baocut_livecheck_test.rb
 
+      - name: Verify cask release and all architecture downloads
+        if: runner.os == 'macOS' && github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAP_NAME: ${{ steps.set-up-homebrew.outputs.tap-name }}
+          UPDATE_PR: ${{ inputs.pull_request }}
+          EXPECTED_SHA: ${{ inputs.head_sha }}
+        run: python3 .github/scripts/bump-prs.py verify --pr "$UPDATE_PR" --sha "$EXPECTED_SHA"
+
       - run: brew test-bot --only-formulae
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
 
       - name: Upload bottles as artifact
-        if: always() && github.event_name == 'pull_request'
+        if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
         uses: actions/upload-artifact@v7
         with:
           name: bottles_${{ matrix.os }}
