@@ -56,8 +56,16 @@ jobs:
 
       - run: brew test-bot --only-tap-syntax
 
-      - name: Test livecheck failure reporting
-        if: runner.os == 'macOS'
+      - name: Install Linux delivery dependencies
+        if: runner.os == 'Linux'
+        run: brew install python gh
+
+      - name: Verify delivery dependencies
+        run: |
+          python3 --version
+          gh --version
+
+      - name: Test update automation
         run: python3 -m unittest discover -s test -p '*_test.py' -v
 
       - name: Test BaoCut livecheck
