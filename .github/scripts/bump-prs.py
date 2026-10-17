@@ -172,13 +172,49 @@ def dispatch_ci(api, pr):
     return True
 
 
+def merge_checks_clear(api, pr, runs, verified_run_id):
+    if pr["mergeable_state"] == "clean":
+        return True
+    if pr["mergeable_state"] != "unstable":
+        return False
+
+    # A duplicate, unexecuted PR suite can mark successful dispatched CI unstable.
+    approvals = {r.get("check_suite_id") for r in runs if r["event"] == "pull_request"
+                 and r["status"] == "completed" and r["conclusion"] == "action_required"}
+    approvals.discard(None)
+    if not approvals:
+        return False
+    sha = pr["head"]["sha"]
+    checks = api.pages(f"/commits/{sha}/check-runs?filter=latest", "check_runs")
+    if not checks or any(c["status"] != "completed" or c["conclusion"] != "success" for c in checks):
+        return False
+    if any(s["state"] != "success" for s in api.request(f"/commits/{sha}/status")["statuses"]):
+        return False
+
+    superseded = {r.get("check_suite_id") for r in runs
+                  if r["event"] == "workflow_dispatch" and r["id"] != verified_run_id}
+    observed_approval = False
+    for suite in api.pages(f"/commits/{sha}/check-suites", "check_suites"):
+        if suite["app"]["slug"] == "github-actions":
+            if suite["id"] in approvals and suite["conclusion"] == "action_required":
+                observed_approval = True
+                continue
+            if suite["id"] in superseded:
+                continue
+        # Empty external suites are not check runs; actual pending checks above block.
+        if suite["conclusion"] not in (None, "success"):
+            return False
+    return observed_approval
+
+
 def merge_run(api, run_id):
     run = api.get_run(run_id)
     if (run["event"] != "workflow_dispatch" or run["status"] != "completed" or run["conclusion"] != "success"
             or run["workflow_id"] != api.workflow()["id"]
             or (run.get("head_repository") or {}).get("full_name") != api.repo):
         return False
-    latest = [r for r in api.runs(run["head_sha"]) if r["event"] == "workflow_dispatch"]
+    runs = api.runs(run["head_sha"])
+    latest = [r for r in runs if r["event"] == "workflow_dispatch"]
     if not latest or latest[0]["id"] != run_id:
         return False
     jobs = api.jobs(run_id)
@@ -189,7 +225,7 @@ def merge_run(api, run_id):
         return False
     pr = api.pull(matches[0]["number"])
     if (not candidate(api, pr) or pr["head"]["sha"] != run["head_sha"]
-            or pr["mergeable"] is not True or pr["mergeable_state"] != "clean"):
+            or pr["mergeable"] is not True or not merge_checks_clear(api, pr, runs, run_id)):
         notice(f'PR #{pr["number"]}: head changed or merge/review/check gates are not clear; retained for the next run.', True)
         return False
     inspect_pr(api, pr)
