@@ -260,6 +260,12 @@ class RefreshIntegrationTest(unittest.TestCase):
         self.git("push", "origin", "main")
         self.start = self.git("rev-parse", "HEAD").strip()
         self.api = Mock(default_branch="main")
+        self.api.pull.side_effect = self.visible_pr
+
+    def visible_pr(self, _number):
+        pr = copy.deepcopy(self.pr)
+        pr["head"]["sha"] = self.git("rev-parse", "origin/bump-example-1.1").strip()
+        return pr
 
     @staticmethod
     def git(*args, cwd=None):
@@ -298,6 +304,34 @@ class RefreshIntegrationTest(unittest.TestCase):
         self.assertEqual(self.git("rev-parse", "HEAD").strip(), self.start)
         self.assertEqual(self.git("status", "--porcelain"), "")
         self.assertEqual(self.git("rev-parse", "origin/bump-example-1.1").strip(), self.pr["head"]["sha"])
+
+    def test_refresh_waits_for_the_pushed_head_to_be_visible(self):
+        def read(number):
+            return self.pr if self.api.pull.call_count == 1 else self.visible_pr(number)
+
+        self.api.pull.side_effect = read
+        with patch("time.sleep"):
+            result = delivery.refresh(self.api, self.pr, "example", "1.1", "owner/test")
+        self.assertEqual(result["head"]["sha"], self.visible_pr(4)["head"]["sha"])
+        self.assertEqual(self.api.pull.call_count, 2)
+        self.assertEqual(self.git("rev-parse", "HEAD").strip(), self.start)
+
+    def test_refresh_fails_if_the_pushed_head_never_becomes_visible(self):
+        self.api.pull.side_effect = None
+        self.api.pull.return_value = self.pr
+        with patch("time.sleep"), self.assertRaisesRegex(ValueError, "not visible"):
+            delivery.refresh(self.api, self.pr, "example", "1.1", "owner/test")
+        self.assertLessEqual(self.api.pull.call_count, 10)
+        self.assertEqual(self.git("rev-parse", "HEAD").strip(), self.start)
+
+    def test_refresh_rejects_a_concurrent_change_to_the_pr_head(self):
+        changed = copy.deepcopy(self.pr)
+        changed["head"]["sha"] = "f" * 40
+        self.api.pull.side_effect = None
+        self.api.pull.return_value = changed
+        with patch("time.sleep"), self.assertRaisesRegex(ValueError, "changed after refresh"):
+            delivery.refresh(self.api, self.pr, "example", "1.1", "owner/test")
+        self.assertEqual(self.git("rev-parse", "HEAD").strip(), self.start)
 
 
 class ReconciliationTest(unittest.TestCase):
