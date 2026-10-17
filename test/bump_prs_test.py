@@ -146,6 +146,65 @@ class DeliveryTest(unittest.TestCase):
             self.assertFalse(delivery.merge_run(self.api, 100))
         self.api.merge.assert_not_called()
 
+    def approval_only_suite(self):
+        self.pr["mergeable_state"] = "unstable"
+        self.run["check_suite_id"] = 100
+        native = dict(self.run, id=99, event="pull_request", conclusion="action_required", check_suite_id=99)
+        self.api.runs.return_value = [self.run, native]
+        self.checks = [dict(job, status="completed") for job in self.api.jobs.return_value]
+        self.suites = [
+            {"id": 100, "conclusion": "success", "app": {"slug": "github-actions"}},
+            {"id": 99, "conclusion": "action_required", "app": {"slug": "github-actions"}},
+            {"id": 98, "conclusion": None, "app": {"slug": "vercel"}},
+        ]
+        self.api.pages.side_effect = lambda path, key: self.checks if key == "check_runs" else self.suites
+        self.api.request.return_value = {"statuses": []}
+
+    def test_successful_dispatch_replaces_the_duplicate_approval_only_suite(self):
+        self.approval_only_suite()
+        with patch.object(delivery, "inspect_pr", return_value="example"):
+            self.assertTrue(delivery.merge_run(self.api, 100))
+        self.api.merge.assert_called_once_with(4, "a" * 40)
+
+    def test_actual_failed_or_running_checks_still_block_the_merge(self):
+        for status, conclusion in [("in_progress", None), ("completed", "failure"), ("completed", "skipped")]:
+            with self.subTest(status=status, conclusion=conclusion):
+                self.approval_only_suite()
+                self.checks.append({"name": "another check", "status": status, "conclusion": conclusion})
+                with patch.object(delivery, "inspect_pr", return_value="example"):
+                    self.assertFalse(delivery.merge_run(self.api, 100))
+        self.api.merge.assert_not_called()
+
+    def test_failed_status_or_unknown_failed_suite_still_blocks_the_merge(self):
+        self.approval_only_suite()
+        self.api.request.return_value = {"statuses": [{"context": "external", "state": "failure"}]}
+        with patch.object(delivery, "inspect_pr", return_value="example"):
+            self.assertFalse(delivery.merge_run(self.api, 100))
+        self.api.request.return_value = {"statuses": []}
+        self.suites.append({"id": 101, "conclusion": "failure", "app": {"slug": "github-actions"}})
+        with patch.object(delivery, "inspect_pr", return_value="example"):
+            self.assertFalse(delivery.merge_run(self.api, 100))
+        self.api.merge.assert_not_called()
+
+    def test_only_superseded_dispatches_of_the_same_workflow_can_be_replaced(self):
+        self.approval_only_suite()
+        self.api.runs.return_value.append(dict(self.run, id=97, conclusion="failure", check_suite_id=97))
+        self.suites.append({"id": 97, "conclusion": "failure", "app": {"slug": "github-actions"}})
+        with patch.object(delivery, "inspect_pr", return_value="example"):
+            self.assertTrue(delivery.merge_run(self.api, 100))
+        self.api.merge.assert_called_once_with(4, "a" * 40)
+
+    def test_other_unstable_states_and_blocking_reviews_remain_blocked(self):
+        self.approval_only_suite()
+        self.api.runs.return_value = [self.run]
+        with patch.object(delivery, "inspect_pr", return_value="example"):
+            self.assertFalse(delivery.merge_run(self.api, 100))
+        self.approval_only_suite()
+        self.api.reviews.return_value = [{"user": {"login": "reviewer"}, "state": "CHANGES_REQUESTED"}]
+        with patch.object(delivery, "inspect_pr", return_value="example"):
+            self.assertFalse(delivery.merge_run(self.api, 100))
+        self.api.merge.assert_not_called()
+
     def test_merge_worker_waits_for_ci_and_uses_all_existing_merge_gates(self):
         queued = dict(self.run, status="in_progress", conclusion=None)
         self.api.runs.side_effect = [[queued], [self.run], [self.run]]
