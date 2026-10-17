@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / ".github/scripts/bump-prs.py"
@@ -73,6 +73,7 @@ class DeliveryTest(unittest.TestCase):
         self.api.reviews.return_value = []
         self.api.merge.return_value = {"merged": True}
         self.api.current_checks.return_value = True
+        self.api.request.return_value = {"state": "closed"}
 
     def test_dispatches_ci_for_bot_pr_without_approval(self):
         delivery.dispatch_ci(self.api, self.pr)
@@ -97,6 +98,24 @@ class DeliveryTest(unittest.TestCase):
         with patch.object(delivery, "inspect_pr", return_value="example", create=True):
             self.assertTrue(delivery.merge_run(self.api, 100))
         self.api.merge.assert_called_once_with(4, "a" * 40)
+
+    def test_confirmed_merge_closes_its_single_open_issue(self):
+        self.api.runs.return_value = [self.run]
+        self.api.request.return_value = {"number": 20, "state": "open"}
+        with patch.object(delivery, "inspect_pr", return_value="example"):
+            self.assertTrue(delivery.merge_run(self.api, 100))
+        self.api.request.assert_any_call("/issues/20", "PATCH", {"state": "closed", "state_reason": "completed"})
+        calls = self.api.mock_calls
+        self.assertLess(calls.index(call.merge(4, "a" * 40)),
+                        calls.index(call.request("/issues/20", "PATCH", {"state": "closed", "state_reason": "completed"})))
+
+    def test_refused_merge_never_closes_an_issue(self):
+        self.api.runs.return_value = [self.run]
+        self.api.merge.return_value = {"merged": False}
+        with patch.object(delivery, "inspect_pr", return_value="example"), \
+             self.assertRaisesRegex(ValueError, "refused to merge"):
+            delivery.merge_run(self.api, 100)
+        self.api.request.assert_not_called()
 
     def test_failed_incomplete_wrong_workflow_or_foreign_run_never_merges(self):
         for changes in [{"conclusion": "failure"}, {"status": "in_progress"},
@@ -158,7 +177,7 @@ class DeliveryTest(unittest.TestCase):
             {"id": 98, "conclusion": None, "app": {"slug": "vercel"}},
         ]
         self.api.pages.side_effect = lambda path, key: self.checks if key == "check_runs" else self.suites
-        self.api.request.return_value = {"statuses": []}
+        self.api.request.return_value = {"statuses": [], "state": "closed"}
 
     def test_successful_dispatch_replaces_the_duplicate_approval_only_suite(self):
         self.approval_only_suite()
@@ -438,6 +457,59 @@ class RefreshIntegrationTest(unittest.TestCase):
         with patch("time.sleep"), self.assertRaisesRegex(ValueError, "changed after refresh"):
             delivery.refresh(self.api, self.pr, "example", "1.1", "owner/test")
         self.assertEqual(self.git("rev-parse", "HEAD").strip(), self.start)
+
+
+class IssueCloseoutTest(unittest.TestCase):
+    def setUp(self):
+        self.api = Mock(repo="owner/homebrew-test", default_branch="main")
+        self.pr = dict(copy.deepcopy(PR), state="closed", merged=True, merged_at="2026-10-17T09:53:37Z")
+        self.issue = {"number": 20, "state": "open"}
+        self.api.pulls.return_value = []
+        self.api.pull.return_value = self.pr
+        self.api.request.return_value = self.issue
+        self.api.pages.side_effect = lambda path: [self.issue] if path.startswith("/issues?") else [self.pr]
+
+    def prepare(self):
+        with patch.object(delivery, "live_versions", return_value={}):
+            delivery.prepare(self.api, "owner/test")
+
+    def test_next_updater_recovers_an_issue_left_open_after_a_merge(self):
+        self.prepare()
+        self.api.request.assert_any_call("/issues/20", "PATCH", {"state": "closed", "state_reason": "completed"})
+
+    def test_closed_issues_are_not_written_again(self):
+        self.api.request.return_value = {"number": 20, "state": "closed"}
+        self.prepare()
+        self.api.request.assert_called_once_with("/issues/20")
+
+    def test_unmerged_foreign_human_or_ambiguous_prs_do_not_close_issues(self):
+        cases = [{"merged": False}, {"state": "open"}, {"merged_at": None},
+                 {"user": {"login": "someone"}}, {"draft": True},
+                 {"head": dict(self.pr["head"], repo={"full_name": "other/fork"})},
+                 {"base": dict(self.pr["base"], ref="other")},
+                 {"body": "Closes #20\nCloses #21"}, {"body": "Refs #20"}]
+        for changes in cases:
+            with self.subTest(changes=changes):
+                original = self.pr
+                self.pr = dict(original, **changes)
+                self.api.pull.return_value = self.pr
+                self.api.request.reset_mock()
+                self.prepare()
+                self.api.request.assert_not_called()
+                self.pr = original
+
+    def test_issue_close_failure_is_reported_and_retried_on_next_run(self):
+        self.api.request.side_effect = [self.issue, subprocess.CalledProcessError(1, "gh")]
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.prepare()
+        self.api.request.side_effect = None
+        self.prepare()
+        self.api.request.assert_any_call("/issues/20", "PATCH", {"state": "closed", "state_reason": "completed"})
+
+    def test_pull_request_references_are_not_closed_as_issues(self):
+        self.issue["pull_request"] = {"url": "https://example.invalid/pr/20"}
+        self.prepare()
+        self.api.request.assert_not_called()
 
 
 class ReconciliationTest(unittest.TestCase):

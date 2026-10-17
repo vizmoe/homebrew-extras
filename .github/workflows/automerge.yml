@@ -20,6 +20,7 @@ jobs:
     permissions:
       actions: read
       contents: write
+      issues: write
       pull-requests: write
     steps:
       # Always load privileged code from the default branch, never from the PR.

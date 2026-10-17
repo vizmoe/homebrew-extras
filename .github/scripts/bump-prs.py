@@ -243,6 +243,7 @@ def merge_run(api, run_id):
     if not api.merge(pr["number"], run["head_sha"]).get("merged"):
         raise ValueError(f'GitHub refused to merge PR #{pr["number"]}')
     notice(f'Merged PR #{pr["number"]} at verified head {run["head_sha"]}; CI: {run["html_url"]}.')
+    close_primary_issue(api, pr)
     return True
 
 
@@ -322,7 +323,34 @@ def ensure_issue(api, name, version, pr=None):
     return issue["number"]
 
 
+def close_primary_issue(api, pr):
+    closing = re.findall(r"(?im)^Closes #(\d+)\s*$", pr.get("body") or "")
+    if len(closing) != 1:
+        notice(f'PR #{pr["number"]}: issue closeout requires exactly one primary leaf issue.', True)
+        return
+    number = int(closing[0])
+    issue = api.request(f"/issues/{number}")
+    if "pull_request" not in issue and issue["state"] == "open":
+        api.request(f"/issues/{number}", "PATCH", {"state": "closed", "state_reason": "completed"})
+        notice(f'Closed issue #{number} after the confirmed merge of PR #{pr["number"]}.')
+
+
+def reconcile_issue_closures(api):
+    open_issues = {i["number"] for i in api.pages("/issues?state=open") if "pull_request" not in i}
+    if not open_issues:
+        return
+    for listed in api.pages("/pulls?state=closed"):
+        closing = re.findall(r"(?im)^Closes #(\d+)\s*$", listed.get("body") or "")
+        if (not listed.get("merged_at") or len(closing) != 1 or int(closing[0]) not in open_issues
+                or not candidate(api, dict(listed, state="open"))):
+            continue
+        pr = api.pull(listed["number"])
+        if pr["state"] == "closed" and pr.get("merged") is True and candidate(api, dict(pr, state="open")):
+            close_primary_issue(api, pr)
+
+
 def prepare(api, tap):
+    reconcile_issue_closures(api)
     pulls = api.pulls()
     for name, version in live_versions(tap).items():
         if version.get("outdated"):
