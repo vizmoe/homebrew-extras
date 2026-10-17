@@ -18,7 +18,7 @@ brew install vizmoe/extras/go-grip
 
 The formula installs upstream prebuilt binaries for macOS and Linux on arm64 and x86_64; no Go toolchain is required. The Linux x86_64 binary requires glibc 2.34 or newer.
 
-The daily autobump workflow updates casks only. go-grip release updates require updating all four platform checksums manually; check for new releases with `brew livecheck vizmoe/extras/go-grip`.
+The [autobump workflow](.github/workflows/autobump.yml) updates casks only. It tracks each update in an issue, refreshes existing bump PRs, and explicitly starts their CI without a separate access token. The [merge workflow](.github/workflows/automerge.yml) merges bot-created, single-cask version/checksum updates only after the current commit passes CI and all architecture downloads are verified. Other changes and unresolved review requests require maintainer attention. Failed lookups and delivery problems appear in workflow annotations and summaries; rerunning the updater resumes pending updates. go-grip release updates require updating all four platform checksums manually; check for new releases with `brew livecheck vizmoe/extras/go-grip`.
 
 Install the Magpie macOS app:
 
@@ -42,7 +42,7 @@ The cask installs the signed upstream desktop app for Apple Silicon and Intel Ma
 | :-----------------: | :-------------------------------------------------------------------: | :---------------------------------------------------: |
 | `audirvana-origin`  |                 [Audirvana Origin](https://audirvana.com/)                 |                 Audio playback software                 |
 |      `azahar`       |          [Azahar](https://github.com/azahar-emu/azahar)           |                 Nintendo 3DS emulator                 |
-|      `baocut`       |                    [BaoCut](https://baocut.app/)                     |      Local-first transcription and subtitle editor      |
+|      `baocut`       |                    [BaoCut](https://baocut.com/)                     |      Local-first transcription and subtitle editor      |
 |     `clicknow`      |                   [Clicknow](https://clicknow.ai/)                   |        AI translation and explanation with one click        |
 |    `clouddrive2`    |             [CloudDrive2](https://www.clouddrive2.com/)              |              Unified cloud storage manager              |
 |      `magpie`      |                   [Magpie](https://usemagpie.ai/)                   |          Menu bar model manager for AI coding agents          |
