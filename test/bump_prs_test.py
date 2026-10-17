@@ -206,6 +206,23 @@ class ReleaseVerificationTest(unittest.TestCase):
                 delivery.verify(self.api, 4, "a" * 40, "owner/test")
         self.assertEqual(command.call_count, 1)
 
+    def test_dispatched_formula_tests_receive_verified_pr_base(self):
+        with patch.object(delivery, "inspect_pr", return_value="example"), \
+             patch.object(delivery, "command", return_value="a" * 40), \
+             patch.object(delivery.subprocess, "run") as run:
+            delivery.formulae(self.api, 4, "a" * 40)
+        args, kwargs = run.call_args
+        self.assertEqual(args[0], ["brew", "test-bot", "--only-formulae"])
+        self.assertEqual(kwargs["env"].get("GITHUB_BASE_REF"), "main")
+        self.assertTrue(kwargs["check"])
+
+    def test_changed_pr_head_stops_formula_tests(self):
+        with patch.object(delivery, "command", return_value="b" * 40), \
+             patch.object(delivery.subprocess, "run") as run:
+            with self.assertRaises(ValueError):
+                delivery.formulae(self.api, 4, "a" * 40)
+        run.assert_not_called()
+
 
 class RefreshIntegrationTest(unittest.TestCase):
     """Real local Git origin/checkout; only the upstream Homebrew call is replaced."""
