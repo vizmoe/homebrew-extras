@@ -146,6 +146,51 @@ class DeliveryTest(unittest.TestCase):
             self.assertFalse(delivery.merge_run(self.api, 100))
         self.api.merge.assert_not_called()
 
+    def test_merge_worker_waits_for_ci_and_uses_all_existing_merge_gates(self):
+        queued = dict(self.run, status="in_progress", conclusion=None)
+        self.api.runs.side_effect = [[queued], [self.run], [self.run]]
+        with patch.object(delivery, "inspect_pr", return_value="example"), patch("time.sleep") as sleep:
+            delivery.merge_pending(self.api, attempts=3)
+        sleep.assert_called_once()
+        self.api.merge.assert_called_once_with(4, "a" * 40)
+
+    def test_merge_worker_reports_failed_ci_without_merging(self):
+        self.api.runs.return_value = [dict(self.run, conclusion="failure")]
+        with patch.object(delivery, "inspect_pr", return_value="example"), \
+             self.assertRaisesRegex(ValueError, "CI failed"):
+            delivery.merge_pending(self.api, attempts=2)
+        self.api.merge.assert_not_called()
+
+    def test_merge_worker_rejects_changed_heads(self):
+        self.api.pull.return_value = dict(self.pr, head=dict(self.pr["head"], sha="c" * 40))
+        with patch.object(delivery, "inspect_pr", return_value="example"), \
+             self.assertRaisesRegex(ValueError, "head changed"):
+            delivery.merge_pending(self.api, attempts=2)
+        self.api.merge.assert_not_called()
+
+    def test_merge_worker_times_out_when_ci_is_missing_or_gates_do_not_clear(self):
+        for runs in [[], [self.run]]:
+            self.api.runs.return_value = runs
+            self.api.current_checks.return_value = False
+            with self.subTest(runs=runs), patch.object(delivery, "inspect_pr", return_value="example"), \
+                 patch("time.sleep"), self.assertRaisesRegex(ValueError, "Timed out"):
+                delivery.merge_pending(self.api, attempts=2)
+            self.api.merge.assert_not_called()
+
+    def test_merge_worker_continues_healthy_updates_after_a_failed_ci(self):
+        healthy = copy.deepcopy(self.pr)
+        healthy["number"] = 5
+        healthy["head"].update(sha="c" * 40, ref="bump-healthy-1.1")
+        healthy_run = dict(self.run, id=101, head_sha="c" * 40, head_branch=healthy["head"]["ref"])
+        self.api.pulls.return_value = [self.pr, healthy]
+        self.api.pull.side_effect = lambda number: healthy if number == 5 else self.pr
+        self.api.runs.side_effect = lambda sha: [healthy_run] if sha == "c" * 40 else [dict(self.run, conclusion="failure")]
+        self.api.get_run.return_value = healthy_run
+        with patch.object(delivery, "inspect_pr", return_value="example"), \
+             self.assertRaisesRegex(ValueError, "CI failed"):
+            delivery.merge_pending(self.api, attempts=2)
+        self.api.merge.assert_called_once_with(5, "c" * 40)
+
 
 class ScopeInspectionTest(unittest.TestCase):
     def setUp(self):
@@ -319,6 +364,7 @@ class ReconciliationTest(unittest.TestCase):
         issue.assert_called_once_with(api, "example", "1.2", second)
         refresh.assert_called_once_with(api, second, "example", "1.2", "owner/test")
         dispatch.assert_called_once_with(api, refreshed)
+        api.dispatch.assert_called_once_with("automerge.yml", "main", {})
 
 
 if __name__ == "__main__":
