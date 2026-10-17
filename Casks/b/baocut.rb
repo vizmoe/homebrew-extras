@@ -1,14 +1,14 @@
 cask "baocut" do
-  version "1.1.4,51"
-  sha256 "5bf6e683d1ffdf14e2f2f519085c62b62cd6ec40fc6df97479af1f5f853d7738"
+  version "3.8.0,77"
+  sha256 "3089aa5affeaea211403751c5367a5aaa2cca317dedf759e0c2950e32116a901"
 
-  url "https://baocut.app/downloads/BaoCut-#{version.csv.first}-build.#{version.csv.second}-arm64.dmg"
+  url "https://github.com/JimLiu/baocut/releases/download/baocut-v#{version.csv.first}-build.#{version.csv.second}/BaoCut-#{version.csv.first}-build.#{version.csv.second}-aarch64-apple-darwin.dmg"
   name "BaoCut"
   desc "Local-first transcription and subtitle editor"
-  homepage "https://baocut.app/"
+  homepage "https://baocut.com/"
 
   livecheck do
-    url "https://baocut.app/appcast.json"
+    url "https://github.com/JimLiu/baocut/releases/latest/download/appcast-aarch64-apple-darwin.json"
     strategy :json do |json|
       version = json["version"]
       build = json["build"]
@@ -20,18 +20,22 @@ cask "baocut" do
 
   auto_updates true
   depends_on arch: :arm64
-  depends_on macos: :sequoia
+  depends_on macos: :sonoma
 
   app "BaoCut.app"
 
-  uninstall quit: "com.jimliu.baocut"
+  uninstall quit: "com.baocut.app"
 
   zap trash: [
     "~/Library/Application Support/BaoCut",
+    "~/Library/Caches/com.baocut.app",
     "~/Library/Caches/com.jimliu.baocut",
+    "~/Library/HTTPStorages/com.baocut.app",
     "~/Library/HTTPStorages/com.jimliu.baocut",
     "~/Library/Logs/BaoCut",
+    "~/Library/Preferences/com.baocut.app.plist",
     "~/Library/Preferences/com.jimliu.baocut.plist",
+    "~/Library/Saved Application State/com.baocut.app.savedState",
     "~/Library/Saved Application State/com.jimliu.baocut.savedState",
   ]
 end
