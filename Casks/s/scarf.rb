@@ -1,9 +1,9 @@
 cask "scarf" do
   arch arm: "ARM64", intel: "Universal"
 
-  version "3.2.0"
-  sha256 arm:   "f1a706e07cf8e9aa833165d366109011045ad3f3c430ad43bba4359ed18acfa3",
-         intel: "d898d8676fcc6d93c0f5f011ba24d3c9c69c0e17309f5a5f98c5c15be7f8d3c4"
+  version "3.6.0"
+  sha256 arm:   "da1662e781a99ccd661621bbde4ad656037097b3e486f4bf603f6e28039a4bcc",
+         intel: "5fb9f344fb5a919acceb6ce5f3ce1598d578e9f5ad46943728057040c348a944"
 
   url "https://github.com/awizemann/scarf/releases/download/v#{version}/Scarf-v#{version}-#{arch}.zip"
   name "Scarf"
