@@ -315,9 +315,19 @@ def verify(api, number, sha, tap):
     command("brew", "audit", "--cask", "--online", f"{tap}/{name}", capture=False)
 
 
+def formulae(api, number, sha):
+    pr = api.pull(number)
+    if pr["head"]["sha"] != sha or command("git", "rev-parse", "HEAD").strip() != sha:
+        raise ValueError("Requested PR head changed")
+    inspect_pr(api, pr)
+    # Homebrew detects a PR's diff through GITHUB_BASE_REF, which dispatch lacks.
+    env = dict(os.environ, GITHUB_BASE_REF=pr["base"]["ref"])
+    subprocess.run(["brew", "test-bot", "--only-formulae"], env=env, check=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=["prepare", "reconcile", "merge", "verify"])
+    parser.add_argument("operation", choices=["prepare", "reconcile", "merge", "verify", "formulae"])
     parser.add_argument("--tap", default=os.environ.get("TAP_NAME"))
     parser.add_argument("--pr", type=int)
     parser.add_argument("--sha")
@@ -328,6 +338,8 @@ def main():
         merge_run(api, args.run_id)
     elif args.operation == "verify":
         verify(api, args.pr, args.sha, args.tap)
+    elif args.operation == "formulae":
+        formulae(api, args.pr, args.sha)
     elif args.operation == "prepare":
         prepare(api, args.tap)
     else:
