@@ -285,6 +285,8 @@ class RefreshIntegrationTest(unittest.TestCase):
         self.git("init", "-b", "main")
         self.git("config", "user.name", "Test")
         self.git("config", "user.email", "test@example.invalid")
+        # Temporary fixture commits must not depend on the user's signing agent.
+        self.git("config", "commit.gpgsign", "false")
         self.path = Path("Casks/e/example.rb")
         self.path.parent.mkdir(parents=True)
         self.path.write_text(BEFORE)
