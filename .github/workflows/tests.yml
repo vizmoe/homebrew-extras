@@ -56,12 +56,10 @@ jobs:
 
       - run: brew test-bot --only-tap-syntax
 
-      - name: Install Linux delivery dependencies
-        if: runner.os == 'Linux'
-        run: brew install python gh
-
-      - name: Verify delivery dependencies
+      - name: Install and verify delivery dependencies
         run: |
+          if ! command -v python3 >/dev/null; then brew install python; fi
+          if ! command -v gh >/dev/null; then brew install gh; fi
           python3 --version
           gh --version
 
