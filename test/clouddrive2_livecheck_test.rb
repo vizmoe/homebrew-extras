@@ -5,6 +5,7 @@
 # Run with: brew ruby test/clouddrive2_livecheck_test.rb
 require "cask/cask_loader"
 require "livecheck/livecheck"
+require "utils/shared_audits"
 require "minitest/autorun"
 
 class CloudDrive2LivecheckTest < Minitest::Test
@@ -72,7 +73,42 @@ class CloudDrive2LivecheckTest < Minitest::Test
     assert_nil latest_version
   end
 
+  def test_audits_both_stable_and_prerelease_app_releases
+    assert_nil release_audit(prerelease: true)
+    assert_nil release_audit(prerelease: false)
+  end
+
+  def test_release_channel_still_rejects_drafts
+    [true, false].each do |prerelease|
+      assert_match(/is a GitHub draft/, release_audit(prerelease:, draft: true))
+    end
+  end
+
+  def test_release_exception_does_not_allow_other_casks_prereleases
+    assert_match(/is a GitHub pre-release/, release_audit(prerelease: true, token: "unrelated"))
+    assert_nil release_audit(prerelease: false, token: "unrelated")
+  end
+
   private
+
+  def release_audit(prerelease:, draft: false, token: "clouddrive2")
+    # Exercise Homebrew's real release audit and tap exception reader. Only the
+    # release HTTP response and the tap's checkout location are substituted.
+    tap = Tap.fetch("test/clouddrive-audit")
+    root = Pathname.new(File.expand_path("..", __dir__))
+    tap.define_singleton_method(:path) { root }
+    source = @source.sub('cask "clouddrive2"', "cask \"#{token}\"")
+    cask = Cask::CaskLoader::FromContentLoader.new(source).load(config: nil)
+    cask.define_singleton_method(:tap) { tap }
+    original_api = GitHub::API.method(:open_rest)
+    cached_releases = SharedAudits.instance_variable_get(:@github_release_data)
+    SharedAudits.instance_variable_set(:@github_release_data, nil)
+    GitHub::API.define_singleton_method(:open_rest) { |_url| { "prerelease" => prerelease, "draft" => draft } }
+    SharedAudits.github_release("cloud-fs", "cloud-fs.github.io", "app-v1.1.3-24", cask:)
+  ensure
+    GitHub::API.define_singleton_method(:open_rest, original_api)
+    SharedAudits.instance_variable_set(:@github_release_data, cached_releases)
+  end
 
   def latest_version
     # Replace only Git/HTTP transport; exercise Homebrew's real cask, tag parsing,
