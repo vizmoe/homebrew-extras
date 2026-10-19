@@ -97,7 +97,8 @@ class CloudDrive2LivecheckTest < Minitest::Test
     tap = Tap.fetch("test/clouddrive-audit")
     root = Pathname.new(File.expand_path("..", __dir__))
     tap.define_singleton_method(:path) { root }
-    cask = Cask::CaskLoader::FromContentLoader.new(@source.sub('cask "clouddrive2"', "cask \"#{token}\"")).load(config: nil)
+    source = @source.sub('cask "clouddrive2"', "cask \"#{token}\"")
+    cask = Cask::CaskLoader::FromContentLoader.new(source).load(config: nil)
     cask.define_singleton_method(:tap) { tap }
     original_api = GitHub::API.method(:open_rest)
     cached_releases = SharedAudits.instance_variable_get(:@github_release_data)
