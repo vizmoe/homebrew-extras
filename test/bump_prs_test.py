@@ -270,6 +270,17 @@ class DeliveryTest(unittest.TestCase):
         self.api.merge.assert_called_once_with(5, "c" * 40)
 
 
+class AppDeliveryTest(DeliveryTest):
+    """Run the same CI/review/head contracts for the new installation identity."""
+
+    def setUp(self):
+        super().setUp()
+        configured = patch.dict(os.environ, {"CASK_UPDATER_APP_SLUG": "dedicated-updater"})
+        configured.start()
+        self.addCleanup(configured.stop)
+        self.pr["user"] = {"login": "dedicated-updater[bot]", "type": "Bot"}
+
+
 class ScopeInspectionTest(unittest.TestCase):
     def setUp(self):
         self.api = Mock(repo="owner/homebrew-test", default_branch="main")
@@ -306,6 +317,41 @@ class ScopeInspectionTest(unittest.TestCase):
         self.api.content.side_effect = [BEFORE, AFTER.replace("example.com", "evil.example")]
         with self.assertRaises(ValueError):
             delivery.inspect_pr(self.api, self.pr)
+
+
+class AppIdentityTest(unittest.TestCase):
+    def setUp(self):
+        self.api = Mock(repo="owner/homebrew-test", default_branch="main")
+        self.pr = copy.deepcopy(PR)
+        self.pr["user"] = {"login": "dedicated-updater[bot]", "type": "Bot"}
+        configured = patch.dict(os.environ, {"CASK_UPDATER_APP_SLUG": "dedicated-updater"})
+        configured.start()
+        self.addCleanup(configured.stop)
+
+    def test_configured_app_update_is_eligible(self):
+        self.assertTrue(delivery.candidate(self.api, self.pr))
+
+    def test_other_apps_and_users_are_not_trusted(self):
+        for actor in [{"login": "other-app[bot]", "type": "Bot"},
+                      {"login": "dedicated-updater", "type": "User"},
+                      {"login": "dedicated-updater[bot]", "type": "User"}]:
+            with self.subTest(actor=actor):
+                self.assertFalse(delivery.candidate(self.api, dict(self.pr, user=actor)))
+
+    def test_missing_app_configuration_does_not_trust_an_arbitrary_bot(self):
+        with patch.dict(os.environ, {"CASK_UPDATER_APP_SLUG": ""}):
+            self.assertFalse(delivery.candidate(self.api, self.pr))
+
+    def test_app_identity_does_not_relax_repository_or_branch_scope(self):
+        for changes in [{"draft": True},
+                        {"head": dict(self.pr["head"], repo={"full_name": "other/fork"})},
+                        {"head": dict(self.pr["head"], ref="unrelated")},
+                        {"base": dict(self.pr["base"], ref="other")}]:
+            with self.subTest(changes=changes):
+                self.assertFalse(delivery.candidate(self.api, dict(self.pr, **changes)))
+
+    def test_legacy_actions_updates_remain_available_for_closeout(self):
+        self.assertTrue(delivery.candidate(self.api, PR))
 
 
 class ReleaseVerificationTest(unittest.TestCase):
