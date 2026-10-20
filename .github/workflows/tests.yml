@@ -30,6 +30,8 @@ jobs:
       checks: read
       contents: read
       pull-requests: read
+    env:
+      CASK_UPDATER_APP_SLUG: ${{ vars.CASK_UPDATER_APP_SLUG }}
     steps:
       - name: Verify dispatched revision
         if: github.event_name == 'workflow_dispatch'

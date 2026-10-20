@@ -133,8 +133,14 @@ def release_change(before, after):
 
 
 def candidate(api, pr):
+    # The repository variable is controlled by maintainers, never by PR input.
+    app_slug = os.environ.get("CASK_UPDATER_APP_SLUG", "")
+    author = pr["user"]
+    trusted_author = (author["login"] == "github-actions[bot]"
+                      or (bool(app_slug) and author["login"] == f"{app_slug}[bot]"
+                          and author.get("type") == "Bot"))
     return (pr["state"] == "open" and not pr["draft"]
-            and pr["user"]["login"] == "github-actions[bot]"
+            and trusted_author
             and pr["base"]["ref"] == api.default_branch
             and pr["base"]["repo"]["full_name"] == api.repo
             and (pr["head"].get("repo") or {}).get("full_name") == api.repo
