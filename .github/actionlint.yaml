@@ -1,0 +1,3 @@
+config-variables:
+  - CASK_UPDATER_CLIENT_ID
+  - CASK_UPDATER_APP_SLUG
