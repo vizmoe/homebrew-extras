@@ -1,9 +1,9 @@
 cask "nowledge-mem" do
   arch arm: "aarch64", intel: "x86_64"
 
-  version "0.10.105"
-  sha256 arm:   "3dc98ec9510b62781099ef26c5b8a8d96f8424a6b74c7055d1791980cfa4e6a7",
-         intel: "5abeddb4a12ebb298208613fca434ecac519105b8fb8a43e6b2c93af64d49446"
+  version "0.10.106"
+  sha256 arm:   "863c831ea9dc7e46c7ab3d7df75001a17f4deaa9cb55f077473777fe60edcfc9",
+         intel: "9efad22476de4c96b5df34c31c53916598c62417d68c06fb797f2e6d75aa30b0"
 
   url "https://download-mem.nowledge.co/app/#{version}/#{arch}-apple-darwin.dmg"
   name "Nowledge Mem"
