@@ -32,6 +32,14 @@ brew install --cask vizmoe/extras/magpie
 
 The cask installs the signed upstream desktop app for Apple Silicon and Intel Macs running macOS 12 Monterey or later.
 
+Install Pinboard:
+
+```bash
+brew install --cask vizmoe/extras/pinboard
+```
+
+Upstream releases are not notarized. See [Pinboard's installation instructions](https://github.com/vizmoe/pinboard#installation) for macOS first-launch approval guidance.
+
 ## 🌍 List
 
 ### Formulae
@@ -51,5 +59,6 @@ The cask installs the signed upstream desktop app for Apple Silicon and Intel Ma
 |    `clouddrive2`    |             [CloudDrive2](https://www.clouddrive2.com/)              |              Unified cloud storage manager              |
 |      `magpie`      |                   [Magpie](https://usemagpie.ai/)                   |          Menu bar model manager for AI coding agents          |
 |   `nowledge-mem`    |              [Nowledge Mem](https://mem.nowledge.co/)               |     Local-first context manager for AI conversations     |
+|     `pinboard`     |              [Pinboard](https://github.com/vizmoe/pinboard)              |     Pin clipboard text and images in floating windows     |
 |       `scarf`       |           [Scarf](https://github.com/awizemann/scarf)            |         Native companion app for the Hermes AI agent         |
 |    `subrenamer`     |         [SubRenamer](https://github.com/qwqcode/SubRenamer)          |      Batch rename subtitle files to match video names      |
