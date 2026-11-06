@@ -1,6 +1,6 @@
 cask "baocut" do
-  version "3.16.0,88"
-  sha256 "71136b14c1eba4ce7f3b1eaf12ee63e7f41677e9eec8c0631e5b5449b35542d2"
+  version "3.16.2,90"
+  sha256 "677f10f17497f42426640ff68ac02c15804dbbc1aba70ae7825a9e63ae3de3ee"
 
   url "https://github.com/JimLiu/baocut/releases/download/baocut-v#{version.csv.first}-build.#{version.csv.second}/BaoCut-#{version.csv.first}-build.#{version.csv.second}-aarch64-apple-darwin.dmg"
   name "BaoCut"
