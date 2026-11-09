@@ -25,12 +25,6 @@ brew install vizmoe/extras/go-grip
 
 The formula installs upstream prebuilt binaries for macOS and Linux on arm64 and x86_64; no Go toolchain is required. The Linux x86_64 binary requires glibc 2.34 or newer.
 
-Install the magpie CLI:
-
-```bash
-brew install vizmoe/extras/magpie-cli
-```
-
 The [autobump workflow](.github/workflows/autobump.yml) updates casks only. It tracks each update in an issue, refreshes existing bump PRs, and explicitly starts their CI.
 
 A dedicated GitHub App creates and refreshes bump branches and PRs so GitHub also starts their normal PR checks without an approval-expiry placeholder. Install the App only in this repository; configure its client ID and slug in `CASK_UPDATER_CLIENT_ID` and `CASK_UPDATER_APP_SLUG` repository variables, and its private key in the `CASK_UPDATER_PRIVATE_KEY` Actions secret. The [workflow](.github/workflows/autobump.yml) declares the token permissions and revokes each installation token after the job.
@@ -53,7 +47,6 @@ Upstream releases are not notarized. See [Pinboard's installation instructions](
 | :----------: | :--: | :--- |
 | `discordchatexporter-cli` | [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) | Saves Discord chat logs to a file |
 | `go-grip` | [go-grip](https://github.com/chrishrb/go-grip) | Preview Markdown files locally with GitHub styling |
-| `magpie-cli` | [magpie](https://github.com/yetone/magpie) | Model gateway for AI coding agents |
 
 ### Casks
 
