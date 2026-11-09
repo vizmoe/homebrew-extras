@@ -11,6 +11,7 @@ on:
     paths:
       - .github/workflows/autobump.yml
       - .github/scripts/check-livecheck.py
+      - .github/scripts/livecheck.py
       - .github/scripts/bump-prs.py
       - .github/workflows/tests.yml
       - .github/workflows/automerge.yml

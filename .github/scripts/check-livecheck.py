@@ -9,6 +9,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+from livecheck import run_livecheck
+
 
 SKIP_STATUSES = {"skipped", "deprecated", "disabled", "versioned", "latest", "unversioned"}
 
@@ -97,14 +99,7 @@ def main(argv=None):
     parser.add_argument("tap", help="Homebrew tap, such as vizmoe/extras")
     args = parser.parse_args(argv)
     try:
-        result = subprocess.run(
-            ["brew", "livecheck", "--json", "--autobump", f"--tap={args.tap}"],
-            capture_output=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
-            timeout=600,
-        )
+        result = run_livecheck(args.tap)
     except (OSError, subprocess.TimeoutExpired) as error:
         return report("", f"Unable to run brew livecheck: {error}")
 
