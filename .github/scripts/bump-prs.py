@@ -16,6 +16,8 @@ import sys
 import time
 from urllib.parse import urlencode
 
+from livecheck import run_livecheck
+
 
 EXPECTED_JOBS = {"test-bot (macos-26)", "test-bot (ubuntu-latest, ghcr.io/homebrew/brew:main)"}
 VALUE = re.compile(r'(?m)^([ \t]*(version|sha256(?:[ \t]+(?:arm|intel):)?|(?:arm|intel):)[ \t]+)"([^"\n]+)"(,?)$')
@@ -254,9 +256,17 @@ def merge_run(api, run_id):
 
 
 def live_versions(tap):
-    entries = json.loads(command("brew", "livecheck", "--json", "--autobump", f"--tap={tap}"))
+    try:
+        result = run_livecheck(tap)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise ValueError(f"Unable to run brew livecheck: {error}") from error
+    entries = json.loads(result.stdout)
     if not isinstance(entries, list) or not entries:
         raise ValueError("Missing livecheck results")
+    failures = [str(e) for e in entries if isinstance(e, dict) and e.get("status") == "error"]
+    if result.returncode or failures:
+        detail = "; ".join(filter(None, [result.stderr.strip(), *failures]))
+        raise ValueError(f"brew livecheck exit status {result.returncode}: {detail}")
     return {e["cask"]: e["version"] for e in entries if isinstance(e, dict) and e.get("cask")
             and not e.get("status") and isinstance(e.get("version"), dict)
             and isinstance(e["version"].get("latest"), str) and e["version"]["latest"].strip()}
