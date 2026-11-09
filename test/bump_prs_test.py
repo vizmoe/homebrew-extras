@@ -604,6 +604,19 @@ class ReconciliationTest(unittest.TestCase):
         dispatch.assert_called_once_with(api, refreshed)
         api.dispatch.assert_called_once_with("automerge.yml", "main", {})
 
+    def test_reconcile_closes_obsolete_pr_when_cask_is_already_up_to_date(self):
+        api = Mock(repo="owner/homebrew-test", default_branch="main")
+        pr = copy.deepcopy(PR)
+        api.pulls.return_value = [pr]
+        api.pull.return_value = pr
+        api.pages.return_value = [{"number": 20, "state": "open", "body": "<!-- cask-update:example -->"}]
+        api.request.return_value = {"number": 20, "state": "open"}
+        with patch.object(delivery, "live_versions", return_value={"example": {"latest": "1.1", "outdated": False}}), \
+             patch.object(delivery, "inspect_pr", return_value="example"):
+            delivery.reconcile(api, "owner/test")
+        api.request.assert_any_call("/pulls/4", "PATCH", {"state": "closed"})
+        api.dispatch.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

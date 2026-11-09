@@ -10,6 +10,13 @@ Extras [Homebrew](https://github.com/Homebrew/brew) 🍺 Formulae and Casks Not 
 brew tap vizmoe/extras
 ```
 
+Install DiscordChatExporter:
+
+```bash
+brew install --cask vizmoe/extras/discordchatexporter
+brew install vizmoe/extras/discordchatexporter-cli
+```
+
 Install go-grip:
 
 ```bash
@@ -18,19 +25,17 @@ brew install vizmoe/extras/go-grip
 
 The formula installs upstream prebuilt binaries for macOS and Linux on arm64 and x86_64; no Go toolchain is required. The Linux x86_64 binary requires glibc 2.34 or newer.
 
+Install the magpie CLI:
+
+```bash
+brew install vizmoe/extras/magpie-cli
+```
+
 The [autobump workflow](.github/workflows/autobump.yml) updates casks only. It tracks each update in an issue, refreshes existing bump PRs, and explicitly starts their CI.
 
 A dedicated GitHub App creates and refreshes bump branches and PRs so GitHub also starts their normal PR checks without an approval-expiry placeholder. Install the App only in this repository; configure its client ID and slug in `CASK_UPDATER_CLIENT_ID` and `CASK_UPDATER_APP_SLUG` repository variables, and its private key in the `CASK_UPDATER_PRIVATE_KEY` Actions secret. The [workflow](.github/workflows/autobump.yml) declares the token permissions and revokes each installation token after the job.
 
-The [merge workflow](.github/workflows/automerge.yml) merges bot-created, single-cask version/checksum updates only after the current commit passes CI and all architecture downloads are verified. Other changes and unresolved review requests require maintainer attention. Failed lookups and delivery problems appear in workflow annotations and summaries; rerunning the updater resumes pending updates. go-grip release updates require updating all four platform checksums manually; check for new releases with `brew livecheck vizmoe/extras/go-grip`.
-
-Install the Magpie macOS app:
-
-```bash
-brew install --cask vizmoe/extras/magpie
-```
-
-The cask installs the signed upstream desktop app for Apple Silicon and Intel Macs running macOS 12 Monterey or later.
+The [merge workflow](.github/workflows/automerge.yml) merges bot-created, single-cask version/checksum updates only after the current commit passes CI and all architecture downloads are verified. Other changes and unresolved review requests require maintainer attention. Failed lookups and delivery problems appear in workflow annotations and summaries; rerunning the updater resumes pending updates. Formula release updates require updating all four platform checksums manually; check for new releases with `brew livecheck --tap=vizmoe/extras`.
 
 Install Pinboard:
 
@@ -46,7 +51,9 @@ Upstream releases are not notarized. See [Pinboard's installation instructions](
 
 | Formula Name | Site | Note |
 | :----------: | :--: | :--- |
+| `discordchatexporter-cli` | [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) | Saves Discord chat logs to a file |
 | `go-grip` | [go-grip](https://github.com/chrishrb/go-grip) | Preview Markdown files locally with GitHub styling |
+| `magpie-cli` | [magpie](https://github.com/yetone/magpie) | Model gateway for AI coding agents |
 
 ### Casks
 
@@ -57,7 +64,7 @@ Upstream releases are not notarized. See [Pinboard's installation instructions](
 |      `baocut`       |                    [BaoCut](https://baocut.com/)                     |      Local-first transcription and subtitle editor      |
 |     `clicknow`      |                   [Clicknow](https://clicknow.ai/)                   |        AI translation and explanation with one click        |
 |    `clouddrive2`    |             [CloudDrive2](https://www.clouddrive2.com/)              |              Unified cloud storage manager              |
-|      `magpie`      |                   [Magpie](https://usemagpie.ai/)                   |          Menu bar model manager for AI coding agents          |
+| `discordchatexporter` | [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) |              Saves Discord chat logs to a file              |
 |   `nowledge-mem`    |              [Nowledge Mem](https://mem.nowledge.co/)               |     Local-first context manager for AI conversations     |
 |     `pinboard`     |              [Pinboard](https://github.com/vizmoe/pinboard)              |     Pin clipboard text and images in floating windows     |
 |       `scarf`       |           [Scarf](https://github.com/awizemann/scarf)            |         Native companion app for the Hermes AI agent         |
