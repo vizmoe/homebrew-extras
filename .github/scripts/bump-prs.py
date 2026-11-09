@@ -351,13 +351,35 @@ def close_primary_issue(api, pr):
         notice(f'Closed issue #{number} after the confirmed merge of PR #{pr["number"]}.')
 
 
-def reconcile_issue_closures(api):
-    open_issues = {i["number"] for i in api.pages("/issues?state=open") if "pull_request" not in i}
+def close_resolved_issue(api, name):
+    marker = f"<!-- cask-update:{name} -->"
+    for issue in api.pages("/issues?state=open"):
+        if "pull_request" not in issue and marker in (issue.get("body") or ""):
+            api.request(f'/issues/{issue["number"]}', "PATCH", {"state": "closed", "state_reason": "completed"})
+            notice(f'Closed resolved issue #{issue["number"]} for {name}.')
+
+
+def reconcile_issue_closures(api, versions=None):
+    open_issues = [i for i in api.pages("/issues?state=open") if "pull_request" not in i]
     if not open_issues:
+        return
+    open_numbers = {i["number"] for i in open_issues}
+    if versions is not None:
+        for issue in open_issues:
+            match = re.search(r"<!-- cask-update:([a-z0-9][a-z0-9+@.-]*) -->", issue.get("body") or "")
+            if not match:
+                continue
+            name = match[1]
+            removed = name not in versions and not any(Path("Casks").glob(f"*/{name}.rb"))
+            if removed or versions.get(name, {}).get("outdated") is False:
+                api.request(f'/issues/{issue["number"]}', "PATCH", {"state": "closed", "state_reason": "completed"})
+                open_numbers.discard(issue["number"])
+                notice(f'Closed resolved issue #{issue["number"]} for {name}.')
+    if not open_numbers:
         return
     for listed in api.pages("/pulls?state=closed"):
         closing = re.findall(r"(?im)^Closes #(\d+)\s*$", listed.get("body") or "")
-        if (not listed.get("merged_at") or len(closing) != 1 or int(closing[0]) not in open_issues
+        if (not listed.get("merged_at") or len(closing) != 1 or int(closing[0]) not in open_numbers
                 or not candidate(api, dict(listed, state="open"))):
             continue
         pr = api.pull(listed["number"])
@@ -366,9 +388,10 @@ def reconcile_issue_closures(api):
 
 
 def prepare(api, tap):
-    reconcile_issue_closures(api)
+    versions = live_versions(tap)
+    reconcile_issue_closures(api, versions)
     pulls = api.pulls()
-    for name, version in live_versions(tap).items():
+    for name, version in versions.items():
         if version.get("outdated"):
             matches = [p for p in pulls if candidate(api, p) and p["head"]["ref"].startswith(f"bump-{name}-")]
             ensure_issue(api, name, version["latest"], matches[0] if len(matches) == 1 else None)
@@ -421,10 +444,17 @@ def reconcile(api, tap):
     for listed in api.pulls():
         if not candidate(api, listed):
             continue
-        pending_updates = True
         try:
             pr = api.pull(listed["number"])
             name = inspect_pr(api, pr)
+            removed = name not in versions and not any(Path("Casks").glob(f"*/{name}.rb"))
+            if removed or versions.get(name, {}).get("outdated") is False:
+                api.request(f'/pulls/{pr["number"]}', "PATCH", {"state": "closed"})
+                close_primary_issue(api, pr)
+                close_resolved_issue(api, name)
+                notice(f'Closed obsolete PR #{pr["number"]} for {name}.')
+                continue
+            pending_updates = True
             latest = versions.get(name, {}).get("latest")
             if not latest:
                 raise ValueError(f"Unable to determine latest {name} version")
@@ -435,6 +465,7 @@ def reconcile(api, tap):
             inspect_pr(api, pr)
             dispatch_ci(api, pr)
         except (ValueError, subprocess.CalledProcessError) as error:
+            pending_updates = True
             message = f'PR #{listed["number"]}: {error}'
             notice(message, True)
             failures.append(message)
