@@ -1,9 +1,9 @@
 cask "pinboard" do
   arch arm: "arm64", intel: "x86_64"
 
-  version "0.1.1"
-  sha256 arm:   "d93a6c91d6ce0ec03cbcde543d02d2027b18f8ce6399dbed9ad4a4d00731ff02",
-         intel: "5a063220a70107c0c2189fe7a89f8ec4f02311465158e23d97fd4f0e00154316"
+  version "0.2.0"
+  sha256 arm:   "38e3284a69d4f66aa56355226fdd6e6240f954630d714efeaa33a1015dfdcca1",
+         intel: "13f19e6cad379d1c0983bbf4df44112821590ad76f9448d1d60e7b4f52eac994"
 
   url "https://github.com/vizmoe/pinboard/releases/download/v#{version}/Pinboard-#{version}-macos-#{arch}.dmg"
   name "Pinboard"
