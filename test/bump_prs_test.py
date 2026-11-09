@@ -2,15 +2,18 @@
 
 import copy
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import Mock, call, patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / ".github/scripts/bump-prs.py"
+sys.path.insert(0, str(SCRIPT.parent))
 SPEC = importlib.util.spec_from_file_location("bump_prs", SCRIPT)
 delivery = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(delivery)
@@ -37,6 +40,28 @@ RUN = {
     "head_repository": {"full_name": "owner/homebrew-test"}, "workflow_id": 10,
     "html_url": "https://github.com/owner/homebrew-test/actions/runs/100",
 }
+
+
+class LiveVersionsTest(unittest.TestCase):
+    def test_transient_query_failure_recovers_for_delivery(self):
+        error = [{"cask": "example", "status": "error", "messages": ["curl: (28) Operation timed out"]}]
+        healthy = [{"cask": "example", "version": {"current": "1.0", "latest": "1.1", "outdated": True}}]
+        attempts = [
+            subprocess.CompletedProcess([], 1, json.dumps(error), ""),
+            subprocess.CompletedProcess([], 0, json.dumps(healthy), ""),
+        ]
+        with patch("subprocess.run", side_effect=attempts) as run, patch("time.sleep"):
+            versions = delivery.live_versions("owner/test")
+        self.assertEqual(versions, {"example": healthy[0]["version"]})
+        self.assertEqual(run.call_count, 2)
+
+    def test_persistent_json_query_error_cannot_pass_verification(self):
+        error = [{"cask": "example", "status": "error", "messages": ["curl: (28) Operation timed out"]}]
+        failed = subprocess.CompletedProcess([], 0, json.dumps(error), "")
+        with patch("subprocess.run", side_effect=[failed] * 3) as run, patch("time.sleep"):
+            with self.assertRaisesRegex(ValueError, "Operation timed out"):
+                delivery.live_versions("owner/test")
+        self.assertEqual(run.call_count, 3)
 
 
 class ReleaseScopeTest(unittest.TestCase):
