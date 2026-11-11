@@ -58,6 +58,7 @@ Upstream releases are not notarized. See [Pinboard's installation instructions](
 |     `clicknow`      |                   [Clicknow](https://clicknow.ai/)                   |        AI translation and explanation with one click        |
 |    `clouddrive2`    |             [CloudDrive2](https://www.clouddrive2.com/)              |              Unified cloud storage manager              |
 | `discordchatexporter` | [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) |              Saves Discord chat logs to a file              |
+|    `mygo-music`     |               [MyGo Music](https://music.egoist.dev/)                |         Native music player extensible with plugins         |
 |   `nowledge-mem`    |              [Nowledge Mem](https://mem.nowledge.co/)               |     Local-first context manager for AI conversations     |
 |     `pinboard`     |              [Pinboard](https://github.com/vizmoe/pinboard)              |     Pin clipboard text and images in floating windows     |
 |       `scarf`       |           [Scarf](https://github.com/awizemann/scarf)            |         Native companion app for the Hermes AI agent         |
