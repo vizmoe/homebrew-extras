@@ -17,6 +17,8 @@ cask "clicknow" do
 
   app "Clicknow.app"
 
+  uninstall quit: "app.xylect"
+
   zap trash: [
     "~/Library/Application Support/Clicknow",
     "~/Library/Caches/app.xylect",
