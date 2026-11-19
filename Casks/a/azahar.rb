@@ -19,6 +19,8 @@ cask "azahar" do
 
   app "azahar-macos-#{arch}-#{version}/Azahar.app", target: "Azahar.app"
 
+  uninstall quit: "org.azahar-emu.azahar"
+
   zap trash: [
     "~/Library/Application Support/Azahar",
     "~/Library/Preferences/org.azahar-emu.azahar.plist",

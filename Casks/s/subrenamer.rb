@@ -19,6 +19,8 @@ cask "subrenamer" do
 
   app "SubRenamer.app"
 
+  uninstall quit: "com.qwqcode.subrenamer"
+
   zap trash: [
     "~/Library/Application Support/SubRenamer",
     "~/Library/Preferences/com.qwqcode.subrenamer.plist",
