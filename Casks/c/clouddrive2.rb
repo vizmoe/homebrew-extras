@@ -1,9 +1,9 @@
 cask "clouddrive2" do
   arch arm: "arm64", intel: "x64"
 
-  version "1.2.0,26,26"
-  sha256 arm:   "e8b85cc9a36a3a99d75f0f866120f62561e894b2955c34f5a9ec1cabf0fc4be5",
-         intel: "18d6eb34613455bd23a5b495ad91b2418b1e9ed70ab690a3e0d2bb5f7746c060"
+  version "1.2.0,27,27"
+  sha256 arm:   "51a1eb8456f4ca84fe0109192e21a76fabb8d83b64bbd2d3bc00f8ec07713db6",
+         intel: "aa2c86cb581195ef86c37696a0929cb6d137175b885221b2a2339456a41338cf"
 
   # Upstream's macOS asset build can differ from the release tag's build.
   url "https://github.com/cloud-fs/cloud-fs.github.io/releases/download/app-v#{version.csv.first}-#{version.csv.third}/CloudDrive2-#{version.csv.first}-#{version.csv.second}-macos-#{arch}.dmg"
